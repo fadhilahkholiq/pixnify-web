@@ -1,0 +1,21 @@
+# Dependencies & Build Output
+node_modules/
+dist/
+.vite/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Local Env & Platform CLI Artifacts
+.env
+.env.*
+!.env.example
+*.local
+.vercel
+.wrangler
+
+# OS Files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,24 @@
+{
+  "name": "pixnify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "100% client-side, privacy-first local image and EXIF optimizer",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@jsquash/avif": "^1.3.0",
+    "@jsquash/jpeg": "^1.5.0",
+    "@jsquash/png": "^3.0.1",
+    "@jsquash/resize": "^2.1.0",
+    "@jsquash/webp": "^1.4.0",
+    "exifr": "^7.1.3",
+    "fflate": "^0.8.2"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11"
+  }
+}
