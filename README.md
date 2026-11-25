@@ -28,7 +28,6 @@
 - **Language & Build:** Vanilla JavaScript (ES Modules + JSDoc), Vite (`worker: { format: 'es' }`)
 - **WebAssembly Codecs:** `@jsquash/jpeg`, `@jsquash/png`, `@jsquash/webp`, `@jsquash/avif`, `@jsquash/resize`
 - **Metadata & Archiving:** `exifr`, `fflate`
-- **Styling:** Custom CSS with design tokens following [DESIGN.md](./DESIGN.md)
 
 ---
 
