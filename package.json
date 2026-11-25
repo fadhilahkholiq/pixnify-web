@@ -19,6 +19,7 @@
     "fflate": "^0.8.2"
   },
   "devDependencies": {
-    "vite": "^6.4.6"
+    "vite": "^6.4.6",
+    "wrangler": "^4.168.0"
   }
 }
