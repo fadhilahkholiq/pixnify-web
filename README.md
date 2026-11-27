@@ -23,6 +23,59 @@
 
 ---
 
+## Screenshots & Feature Walkthrough
+
+### 1. App Shell, Pipeline Inspector & Dropzone
+Full-viewport split workspace featuring the sticky top bar (`WASM Ready` status & `Privacy Info`), the 340px pipeline inspector sidebar, and the full-height dot-grid drop surface supporting drag-and-drop, file selection, and clipboard paste (`Ctrl+V` / `⌘+V`).
+
+<kbd>
+  <img src="./docs/screenshots/01-empty-workspace.png" alt="" />
+</kbd>
+
+### 2. Batch Compression & Format Conversion (WebP / AVIF / JPEG / PNG)
+Switch output format (`Original`, `WebP`, `AVIF`, `JPEG`, `PNG`), quality, and resize bounds in real time. The sticky batch bar tracks queue progress, total byte savings, detected privacy risks, single-file downloads, and off-thread `.zip` archive export.
+
+<kbd>
+  <img src="./docs/screenshots/02-batch-optimize-webp.png" alt="" />
+</kbd>
+
+### 3. 3-Tier EXIF & GPS Privacy Inspector Drawer
+Click any file's metadata pill (`GPS & High Risk`, `Context Tags`, or `Tech Tags`) to inspect 128 KB partial-slice tags grouped into **High Risk**, **Medium**, and **Technical** tiers, including embedded GPS coordinate alerts.
+
+<kbd>
+  <img src="./docs/screenshots/03-exif-privacy-drawer.png" alt="" />
+</kbd>
+
+### 4. Split-Slider Visual Quality Comparison
+Compare the original input against the optimized WebAssembly output side-by-side using the interactive split-slider modal (`Compare`) with before/after byte sizes and dimensions.
+
+<kbd>
+  <img src="./docs/screenshots/04-visual-compare-modal.png" alt="" />
+</kbd>
+
+### 5. Lossless Metadata Removal (`Strip EXIF Only`)
+Toggle the segmented control to **Strip EXIF Only** to run the byte-level `DataView` binary stripper—removing `APP1` (EXIF/GPS/XMP), `APP13`, and PNG/WebP metadata chunks in milliseconds with zero pixel re-encoding.
+
+<kbd>
+  <img src="./docs/screenshots/05-strip-exif-only.png" alt="" />
+</kbd>
+
+### 6. Zero-Server Privacy Info Modal
+Click **Privacy Info** in the top bar to review the client-side architecture guarantees (16-byte magic-byte sniffing, lossless binary stripping, 128 KB partial-slice EXIF reading, and bounded WASM worker pool).
+
+<kbd>
+  <img src="./docs/screenshots/06-privacy-info-modal.png" alt="" />
+</kbd>
+
+### 7. Responsive Mobile Layout
+Adapts cleanly to mobile viewports (`390×844`) by stacking the pipeline inspector above the batch summary and file queue without horizontal overflow.
+
+<kbd>
+  <img src="./docs/screenshots/07-mobile-responsive.png" alt="" width="390" />
+</kbd>
+
+---
+
 ## Tech Stack
 
 - **Language & Build:** Vanilla JavaScript (ES Modules + JSDoc), Vite (`worker: { format: 'es' }`)

@@ -1,5 +1,6 @@
 /**
- * Queue list, live batch progress bar, savings badges, single download & ZIP export.
+ * Queue list, sticky batch summary bar, emerald savings pills, risk badges,
+ * single download & off-thread ZIP export.
  */
 
 import { formatMimeLabel, mimeToExtension } from '../core/file-sniffer.js';
@@ -47,16 +48,17 @@ function triggerDownloadUrl(url, filename) {
 }
 
 /**
- * Build EXIF privacy badge button for an item.
+ * Build EXIF privacy badge button for an item using restrained semantic accents.
  * @param {import('../state/store.js').PixnifyItem} item
- * @returns {HTMLElement}
+ * @returns {HTMLButtonElement}
  */
 function createExifBadge(item) {
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'tag tag-clickable';
+  btn.className = 'risk-pill';
 
   if (!item.exifData) {
+    btn.classList.add('risk-safe');
     btn.textContent = 'Scanning EXIF…';
     btn.disabled = true;
     return btn;
@@ -64,16 +66,19 @@ function createExifBadge(item) {
 
   const { highestRisk, riskCounts, hasGps, totalTags } = item.exifData;
   if (highestRisk === 'high') {
-    btn.classList.add('tag-ink');
+    btn.classList.add('risk-high');
     btn.textContent = hasGps
       ? `GPS & ${riskCounts.high} High Risk`
       : `${riskCounts.high} High Risk`;
   } else if (highestRisk === 'medium') {
+    btn.classList.add('risk-medium');
     btn.textContent = `${riskCounts.medium} Context Tags`;
   } else if (highestRisk === 'safe') {
+    btn.classList.add('risk-safe');
     btn.textContent = `${totalTags} Tech Tags`;
   } else {
-    btn.textContent = 'No EXIF Found';
+    btn.classList.add('risk-safe');
+    btn.textContent = 'No EXIF';
   }
 
   btn.title = 'Inspect extracted metadata';
@@ -91,7 +96,7 @@ function createExifBadge(item) {
  */
 function renderQueueCard(item) {
   const card = document.createElement('article');
-  card.className = 'card queue-item';
+  card.className = 'queue-card';
   card.dataset.itemId = item.id;
 
   // Thumbnail
@@ -116,7 +121,7 @@ function renderQueueCard(item) {
   filenameEl.textContent = item.originalFile.name;
 
   const formatTag = document.createElement('span');
-  formatTag.className = 'tag';
+  formatTag.className = 'mono-pill';
   const inLabel = formatMimeLabel(item.detectedMime);
   const outLabel = item.outputMime ? formatMimeLabel(item.outputMime) : null;
   formatTag.textContent =
@@ -145,9 +150,16 @@ function renderQueueCard(item) {
     sizeText.textContent = `${formatBytes(item.originalFile.size)} → ${formatBytes(outSize)}`;
 
     const savingsBadge = document.createElement('span');
-    savingsBadge.className = pct > 0 ? 'tag tag-ink' : 'tag';
-    savingsBadge.textContent =
-      pct > 0 ? `-${pct}% (${formatBytes(diff)})` : pct === 0 ? '0% (Lossless)' : `+${Math.abs(pct)}%`;
+    if (pct > 0) {
+      savingsBadge.className = 'emerald-pill';
+      savingsBadge.textContent = `-${pct}% (${formatBytes(diff)})`;
+    } else if (pct === 0) {
+      savingsBadge.className = 'mono-pill';
+      savingsBadge.textContent = '0% (Lossless)';
+    } else {
+      savingsBadge.className = 'mono-pill';
+      savingsBadge.textContent = `+${Math.abs(pct)}%`;
+    }
 
     metaRow.append(sizeText, savingsBadge);
 
@@ -163,7 +175,7 @@ function renderQueueCard(item) {
       stripSpan.textContent =
         segCount > 0
           ? `Stripped ${item.removedSegments.join(', ')} · ${item.durationMs} ms`
-          : `Clean (0 metadata segments) · ${item.durationMs} ms`;
+          : `Clean · ${item.durationMs} ms`;
       metaRow.appendChild(stripSpan);
     } else if (item.durationMs) {
       const timeSpan = document.createElement('span');
@@ -188,7 +200,7 @@ function renderQueueCard(item) {
   if (item.status === 'done' && item.outputUrl) {
     const compareBtn = document.createElement('button');
     compareBtn.type = 'button';
-    compareBtn.className = 'btn btn-ghost btn-sm';
+    compareBtn.className = 'btn btn-secondary btn-compact';
     compareBtn.textContent = 'Compare';
     compareBtn.addEventListener('click', () => {
       store.setActiveCompareItem(item.id);
@@ -196,8 +208,11 @@ function renderQueueCard(item) {
 
     const downloadBtn = document.createElement('button');
     downloadBtn.type = 'button';
-    downloadBtn.className = 'btn btn-primary btn-sm';
-    downloadBtn.textContent = 'Download';
+    downloadBtn.className = 'icon-btn';
+    downloadBtn.setAttribute('aria-label', `Download ${item.originalFile.name}`);
+    downloadBtn.title = 'Download optimized file';
+    downloadBtn.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2.5V10.5M8 10.5L4.75 7.25M8 10.5L11.25 7.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 12.5V13C2.5 13.5523 2.94772 14 3.5 14H12.5C13.0523 14 13.5 13.5523 13.5 13V12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     downloadBtn.addEventListener('click', () => {
       const outName = buildOutputFilename(
         item.originalFile.name,
@@ -226,13 +241,16 @@ function renderQueueCard(item) {
 }
 
 /**
- * Initialize queue UI rendering and batch ZIP / Clear actions.
+ * Initialize queue UI rendering, empty/active stage toggle, and ZIP export.
  */
 export function initQueueList() {
-  const batchBar = /** @type {HTMLElement} */ (document.getElementById('batch-bar'));
+  const dropzoneWrap = /** @type {HTMLElement} */ (document.getElementById('dropzone-wrap'));
+  const queueWorkspace = /** @type {HTMLElement} */ (document.getElementById('queue-workspace'));
+  const headerAddBtn = /** @type {HTMLButtonElement} */ (document.getElementById('header-add-btn'));
   const queueListEl = /** @type {HTMLElement} */ (document.getElementById('queue-list'));
   const statProgressEl = /** @type {HTMLElement} */ (document.getElementById('stat-progress'));
   const statSavedEl = /** @type {HTMLElement} */ (document.getElementById('stat-saved'));
+  const statRisksWrap = /** @type {HTMLElement} */ (document.getElementById('stat-risks-wrap'));
   const statRisksEl = /** @type {HTMLElement} */ (document.getElementById('stat-risks'));
   const progressFillEl = /** @type {HTMLElement} */ (document.getElementById('batch-progress-fill'));
   const clearBtn = /** @type {HTMLButtonElement} */ (document.getElementById('clear-queue-btn'));
@@ -284,20 +302,30 @@ export function initQueueList() {
   function render() {
     const items = store.getItems();
     const stats = store.getStats();
+    const hasItems = items.length > 0;
 
-    if (items.length === 0) {
-      batchBar.hidden = true;
+    dropzoneWrap.hidden = hasItems;
+    queueWorkspace.hidden = !hasItems;
+    headerAddBtn.hidden = !hasItems;
+
+    if (!hasItems) {
       queueListEl.replaceChildren();
       return;
     }
 
-    batchBar.hidden = false;
     const completedTotal = stats.done + stats.error;
     const pctDone = stats.total > 0 ? Math.round((completedTotal / stats.total) * 100) : 0;
 
     statProgressEl.textContent = `${completedTotal}/${stats.total}`;
     statSavedEl.textContent = `${formatBytes(stats.savedBytes)} (${stats.savedPercent}%)`;
-    statRisksEl.textContent = `${stats.highRiskCount} file${stats.highRiskCount === 1 ? '' : 's'}`;
+
+    if (stats.highRiskCount > 0) {
+      statRisksWrap.hidden = false;
+      statRisksEl.textContent = `${stats.highRiskCount} file${stats.highRiskCount === 1 ? '' : 's'}`;
+    } else {
+      statRisksWrap.hidden = true;
+    }
+
     progressFillEl.style.width = `${pctDone}%`;
 
     if (!isZipping) {

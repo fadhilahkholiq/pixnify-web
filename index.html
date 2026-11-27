@@ -14,7 +14,7 @@
     />
     <meta name="author" content="Kholiq Fadhilah" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#f4f4f4" />
+    <meta name="theme-color" content="#ffffff" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
@@ -62,301 +62,339 @@
       }
     </script>
 
+    <!-- Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
   <body>
-    <header class="site-header">
-      <div class="container header-inner">
+    <!-- Compact 56px Top App Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
         <a href="#" class="brand" aria-label="Pixnify home">
           <span class="brand-mark" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect x="2" y="2" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.75" />
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <rect x="2" y="2" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8" />
               <circle cx="7.25" cy="7.25" r="1.5" fill="currentColor" />
               <path d="M4.5 14.5L8.5 10.5L11.2 13.2L13.5 10.8L16 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </span>
           <span class="brand-name">Pixnify</span>
         </a>
+        <span class="pill pill-muted">100% Local · Zero Upload</span>
+      </div>
 
-        <nav class="header-nav" aria-label="Primary navigation">
-          <a href="#workbench" class="nav-link">Optimizer</a>
-          <a href="#privacy-architecture" class="nav-link">Privacy</a>
-          <span class="tag tag-quiet" id="isolation-badge" title="Runtime execution mode">Local Wasm</span>
-          <button type="button" class="btn btn-header" id="header-add-btn">
-            Add Images
-          </button>
-        </nav>
+      <div class="topbar-right">
+        <span class="status-pill" id="isolation-badge" title="Local WebAssembly runtime status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="isolation-badge-text">WASM Ready</span>
+        </span>
+        <button
+          type="button"
+          class="btn btn-ghost btn-compact"
+          id="privacy-info-btn"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+        >
+          Privacy Info
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-compact"
+          id="header-add-btn"
+          hidden
+        >
+          Add Images
+        </button>
       </div>
     </header>
 
-    <main class="page-main">
-      <section class="hero-section">
-        <div class="container">
-          <div class="hero-header">
-            <span class="tag">Zero-Server · 100% Client-Side</span>
-            <h1 class="hero-title">Local Image &amp; EXIF Optimizer</h1>
-            <p class="hero-subtitle">
-              Compress, resize, convert to WebP/AVIF, or losslessly strip GPS and camera metadata inside your browser. Your files never leave this device.
-            </p>
+    <!-- Full-Viewport Desktop App Split Shell -->
+    <main class="app-shell">
+      <!-- Left Inspector Sidebar (340px) -->
+      <aside class="inspector-sidebar" aria-label="Optimization pipeline settings">
+        <div class="inspector-section">
+          <div class="section-head">
+            <h1 class="inspector-title">Pipeline</h1>
+            <span class="mono-badge" id="worker-concurrency-label">4 Workers</span>
           </div>
 
-          <div class="info-banner" role="note">
-            <svg class="info-icon" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6" />
-              <path d="M10 9V14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-              <circle cx="10" cy="6.25" r="1" fill="currentColor" />
-            </svg>
-            <p class="info-banner-text">
-              Need zero generational pixel loss? Switch to <strong>Strip Metadata Only</strong> to remove EXIF, GPS, and XMP binary segments directly without re-encoding.
-            </p>
+          <!-- Tactile Segmented Control -->
+          <div class="segmented-track" role="radiogroup" aria-label="Processing mode">
+            <button
+              type="button"
+              class="segmented-pill is-active"
+              id="mode-optimize-btn"
+              data-mode="optimize"
+              aria-pressed="true"
+            >
+              Optimize
+            </button>
+            <button
+              type="button"
+              class="segmented-pill"
+              id="mode-strip-btn"
+              data-mode="strip"
+              aria-pressed="false"
+            >
+              Strip EXIF Only
+            </button>
+          </div>
+          <p class="inspector-desc" id="mode-description">
+            Decodes pixels, applies optional Lanczos resize, and encodes via MozJPEG, OxiPNG, libwebp, or libavif.
+          </p>
+        </div>
+
+        <div class="inspector-section" id="transcode-fields">
+          <div class="control-block">
+            <span class="control-label">Output Format</span>
+            <div class="format-grid" id="format-grid" role="radiogroup" aria-label="Output format">
+              <button type="button" class="format-btn format-btn-wide is-active" data-format="original" aria-pressed="true">
+                Original
+              </button>
+              <button type="button" class="format-btn" data-format="image/webp" aria-pressed="false">
+                WebP
+              </button>
+              <button type="button" class="format-btn" data-format="image/avif" aria-pressed="false">
+                AVIF
+              </button>
+              <button type="button" class="format-btn" data-format="image/jpeg" aria-pressed="false">
+                JPEG
+              </button>
+              <button type="button" class="format-btn" data-format="image/png" aria-pressed="false">
+                PNG
+              </button>
+            </div>
+          </div>
+
+          <div class="control-block" id="quality-field-group">
+            <div class="control-label-row">
+              <label class="control-label" for="setting-quality">Quality</label>
+              <span class="mono-pill" id="quality-readout">82</span>
+            </div>
+            <input
+              id="setting-quality"
+              class="sleek-range"
+              type="range"
+              min="10"
+              max="100"
+              step="1"
+              value="82"
+            />
+            <div class="range-hints">
+              <span>Smaller</span>
+              <span>Higher fidelity</span>
+            </div>
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">Resize Bounds</span>
+            <div class="resize-pair">
+              <label class="input-with-unit">
+                <span class="unit-prefix">Max W</span>
+                <input
+                  id="setting-max-width"
+                  class="unit-input"
+                  type="number"
+                  min="0"
+                  max="16384"
+                  placeholder="Auto"
+                  aria-label="Maximum width in pixels"
+                />
+                <span class="unit-suffix">px</span>
+              </label>
+              <label class="input-with-unit">
+                <span class="unit-prefix">Max H</span>
+                <input
+                  id="setting-max-height"
+                  class="unit-input"
+                  type="number"
+                  min="0"
+                  max="16384"
+                  placeholder="Auto"
+                  aria-label="Maximum height in pixels"
+                />
+                <span class="unit-suffix">px</span>
+              </label>
+            </div>
           </div>
         </div>
-      </section>
 
-      <section id="workbench" class="workbench-section">
-        <div class="container workbench-grid">
-          <!-- Left / Top Control Surface -->
-          <aside class="controls-column" aria-label="Optimization settings">
-            <div class="card settings-card">
-              <div class="card-header-row">
-                <h2 class="card-title">Pipeline</h2>
-                <span class="caption-text" id="worker-concurrency-label">Worker Pool</span>
-              </div>
+        <div class="inspector-section">
+          <span class="control-label">Metadata Policy</span>
+          <div class="toggle-list">
+            <label class="toggle-item" id="strip-metadata-row">
+              <span class="toggle-copy">
+                <span class="toggle-title">Strip GPS &amp; EXIF</span>
+                <span class="toggle-sub">Removes location, device serials, and timestamps</span>
+              </span>
+              <span class="switch">
+                <input type="checkbox" id="setting-strip-metadata" checked />
+                <span class="switch-slider" aria-hidden="true"></span>
+              </span>
+            </label>
 
-              <div class="segmented-control" role="radiogroup" aria-label="Processing mode">
-                <button
-                  type="button"
-                  class="segment-btn is-active"
-                  id="mode-optimize-btn"
-                  data-mode="optimize"
-                  aria-pressed="true"
-                >
-                  Compress &amp; Convert
-                </button>
-                <button
-                  type="button"
-                  class="segment-btn"
-                  id="mode-strip-btn"
-                  data-mode="strip"
-                  aria-pressed="false"
-                >
-                  Strip Metadata Only
-                </button>
-              </div>
-              <p class="field-help" id="mode-description">
-                Decodes pixels, applies optional Lanczos resize, and encodes with MozJPEG, OxiPNG, libwebp, or libavif.
-              </p>
+            <label class="toggle-item">
+              <span class="toggle-copy">
+                <span class="toggle-title">Preserve ICC Color Profile</span>
+                <span class="toggle-sub">Retains sRGB/Display P3 accuracy</span>
+              </span>
+              <span class="switch">
+                <input type="checkbox" id="setting-keep-icc" checked />
+                <span class="switch-slider" aria-hidden="true"></span>
+              </span>
+            </label>
+          </div>
+        </div>
+      </aside>
 
-              <div class="settings-fields" id="transcode-fields">
-                <div class="field-group">
-                  <label class="field-label" for="setting-format">Output Format</label>
-                  <select id="setting-format" class="control-input">
-                    <option value="original">Keep Original Format</option>
-                    <option value="image/webp">WebP (libwebp)</option>
-                    <option value="image/avif">AVIF (libavif)</option>
-                    <option value="image/jpeg">JPEG (MozJPEG)</option>
-                    <option value="image/png">PNG (Lossless)</option>
-                  </select>
-                </div>
+      <!-- Right Main Stage (Dot-Grid Canvas) -->
+      <section class="main-stage" id="workspace-stage" aria-label="Image workspace">
+        <input
+          type="file"
+          id="file-input"
+          accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"
+          multiple
+          hidden
+        />
 
-                <div class="field-group" id="quality-field-group">
-                  <div class="field-label-row">
-                    <label class="field-label" for="setting-quality">Quality</label>
-                    <span class="value-pill" id="quality-readout">82</span>
-                  </div>
-                  <input
-                    id="setting-quality"
-                    class="range-input"
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="1"
-                    value="82"
-                  />
-                  <div class="range-scale">
-                    <span>Smaller file</span>
-                    <span>Higher fidelity</span>
-                  </div>
-                </div>
+        <div class="notice-toast" id="dropzone-notice" role="status" aria-live="polite" hidden></div>
 
-                <div class="field-row-2">
-                  <div class="field-group">
-                    <label class="field-label" for="setting-max-width">Max Width (px)</label>
-                    <input
-                      id="setting-max-width"
-                      class="control-input"
-                      type="number"
-                      min="0"
-                      max="16384"
-                      placeholder="Original"
-                    />
-                  </div>
-                  <div class="field-group">
-                    <label class="field-label" for="setting-max-height">Max Height (px)</label>
-                    <input
-                      id="setting-max-height"
-                      class="control-input"
-                      type="number"
-                      min="0"
-                      max="16384"
-                      placeholder="Original"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="checkbox-stack">
-                <label class="checkbox-row" id="strip-metadata-row">
-                  <input type="checkbox" id="setting-strip-metadata" checked />
-                  <span>
-                    <strong class="checkbox-title">Remove EXIF, GPS &amp; XMP</strong>
-                    <span class="checkbox-sub">Sanitizes location, device serials, and timestamps</span>
-                  </span>
-                </label>
-
-                <label class="checkbox-row">
-                  <input type="checkbox" id="setting-keep-icc" checked />
-                  <span>
-                    <strong class="checkbox-title">Preserve Color Profile (ICC)</strong>
-                    <span class="checkbox-sub">Retains sRGB/Display P3 color accuracy</span>
-                  </span>
-                </label>
-              </div>
+        <!-- Empty State: Full-Height Dropzone -->
+        <div
+          class="empty-dropzone-wrap"
+          id="dropzone-wrap"
+        >
+          <div
+            class="dropzone-surface"
+            id="dropzone"
+            tabindex="0"
+            role="button"
+            aria-label="Drop images here, click to select files, or paste from clipboard"
+          >
+            <div class="dropzone-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V4M12 4L7.5 8.5M12 4L16.5 8.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M4 15.5V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V15.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+              </svg>
             </div>
-          </aside>
-
-          <!-- Right / Main Dropzone & Queue -->
-          <div class="workspace-column">
-            <div
-              class="card dropzone"
-              id="dropzone"
-              tabindex="0"
-              role="button"
-              aria-label="Drop images here, click to browse, or paste from clipboard"
-            >
-              <input
-                type="file"
-                id="file-input"
-                accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"
-                multiple
-                hidden
-              />
-              <div class="dropzone-inner">
-                <div class="dropzone-icon" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 16V4M12 4L7.5 8.5M12 4L16.5 8.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M4 15.5V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V15.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-                  </svg>
-                </div>
-                <div class="dropzone-copy">
-                  <p class="dropzone-title">Drop JPEG, PNG, WebP, or AVIF Files Here</p>
-                  <p class="dropzone-meta">
-                    Click to select files, or press <kbd>Ctrl</kbd>+<kbd>V</kbd> / <kbd>⌘</kbd>+<kbd>V</kbd> to paste from clipboard.
-                  </p>
-                </div>
-                <button type="button" class="btn btn-primary" id="browse-files-btn">
-                  Choose Files
-                </button>
-              </div>
+            <h2 class="dropzone-headline">Drop Images to Optimize Locally</h2>
+            <p class="dropzone-sub">
+              Drag and drop files here, or press <kbd>Ctrl</kbd>+<kbd>V</kbd> / <kbd>⌘</kbd>+<kbd>V</kbd> to paste from clipboard.
+            </p>
+            <div class="format-pills" aria-label="Supported input formats">
+              <span class="mono-pill">JPEG</span>
+              <span class="mono-pill">PNG</span>
+              <span class="mono-pill">WebP</span>
+              <span class="mono-pill">AVIF</span>
             </div>
+            <button type="button" class="btn btn-primary" id="browse-files-btn">
+              Select Images
+            </button>
+          </div>
+        </div>
 
-            <div class="notice-toast" id="dropzone-notice" role="status" aria-live="polite" hidden></div>
-
-            <!-- Batch Summary Bar -->
-            <div class="card batch-bar" id="batch-bar" hidden>
-              <div class="batch-stats">
-                <div class="stat-cell">
-                  <span class="stat-label">Queue</span>
-                  <strong class="stat-value" id="stat-progress">0/0</strong>
+        <!-- Active Queue State -->
+        <div class="queue-workspace" id="queue-workspace" hidden>
+          <div class="batch-bar" id="batch-bar">
+            <div class="batch-bar-top">
+              <div class="batch-metrics">
+                <div class="metric-item">
+                  <span class="metric-label">Files</span>
+                  <span class="mono-value" id="stat-progress">0/0</span>
                 </div>
-                <div class="stat-cell">
-                  <span class="stat-label">Saved</span>
-                  <strong class="stat-value" id="stat-saved">0 B (0%)</strong>
+                <div class="metric-item">
+                  <span class="metric-label">Saved</span>
+                  <span class="emerald-pill" id="stat-saved">0 B (0%)</span>
                 </div>
-                <div class="stat-cell">
-                  <span class="stat-label">High Privacy Risks</span>
-                  <strong class="stat-value" id="stat-risks">0 files</strong>
+                <div class="metric-item" id="stat-risks-wrap" hidden>
+                  <span class="metric-label">Privacy Risks</span>
+                  <span class="risk-pill risk-high" id="stat-risks">0 files</span>
                 </div>
-              </div>
-
-              <div class="progress-track" aria-hidden="true">
-                <div class="progress-fill" id="batch-progress-fill" style="width: 0%"></div>
               </div>
 
               <div class="batch-actions">
-                <button type="button" class="btn btn-ghost" id="clear-queue-btn">
+                <button type="button" class="btn btn-ghost btn-compact" id="clear-queue-btn">
                   Clear All
                 </button>
-                <button type="button" class="btn btn-primary" id="download-zip-btn" disabled>
+                <button type="button" class="btn btn-secondary btn-compact" id="batch-add-more-btn">
+                  Add More
+                </button>
+                <button type="button" class="btn btn-primary btn-compact" id="download-zip-btn" disabled>
                   Download All (.zip)
                 </button>
               </div>
             </div>
 
-            <!-- File Queue Container -->
-            <div class="queue-list" id="queue-list" aria-live="polite"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="privacy-architecture" class="architecture-section">
-        <div class="container">
-          <div class="section-heading-block">
-            <span class="tag">Architecture</span>
-            <h2 class="section-title">Designed for Zero-Leak Verification</h2>
+            <div class="batch-progress-track" aria-hidden="true">
+              <div class="batch-progress-fill" id="batch-progress-fill" style="width: 0%"></div>
+            </div>
           </div>
 
-          <div class="feature-grid">
-            <article class="card feature-card">
-              <h3 class="feature-title">Magic-Byte Sniffing</h3>
-              <p class="feature-body">
-                Reads only the first 16 bytes to verify authentic JPEG, PNG, WebP, or AVIF signatures before queueing.
-              </p>
-            </article>
-            <article class="card feature-card">
-              <h3 class="feature-title">Lossless Binary Strip</h3>
-              <p class="feature-body">
-                Removes APP1/EXIF/XMP/IPTC markers and PNG/WebP metadata chunks at the byte level with zero pixel re-compression.
-              </p>
-            </article>
-            <article class="card feature-card">
-              <h3 class="feature-title">Bounded Worker Pool</h3>
-              <p class="feature-body">
-                Runs Wasm codecs and fflate ZIP bundling off the main thread using transferable ArrayBuffers and strict ObjectURL cleanup.
-              </p>
-            </article>
-          </div>
+          <div class="queue-list" id="queue-list" aria-live="polite"></div>
         </div>
       </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="container footer-inner">
-        <div>
-          <p class="footer-brand">Pixnify</p>
-          <p class="footer-copy">100% client-side image &amp; EXIF optimizer. Zero uploads, zero telemetry.</p>
-          <p class="footer-attribution">Created by Kholiq Fadhilah</p>
-        </div>
-        <div class="footer-right">
-          <div class="footer-meta">
-            <span>MozJPEG · OxiPNG · libwebp · libavif · exifr · fflate</span>
+    <!-- Lightweight Privacy Info Modal -->
+    <div
+      class="modal-backdrop"
+      id="privacy-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="privacy-modal-title"
+      hidden
+    >
+      <div class="modal-card privacy-modal-card">
+        <div class="modal-header">
+          <div>
+            <span class="pill pill-muted">Architecture</span>
+            <h2 class="modal-title" id="privacy-modal-title">Zero-Server Privacy Guarantee</h2>
           </div>
+          <button type="button" class="icon-btn" id="privacy-close-btn" aria-label="Close privacy info">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="privacy-grid">
+          <div class="privacy-item">
+            <h3>16-Byte Magic-Byte Sniffing</h3>
+            <p>Verifies authentic JPEG, PNG, WebP, and AVIF headers locally before queueing.</p>
+          </div>
+          <div class="privacy-item">
+            <h3>Lossless Binary EXIF Strip</h3>
+            <p>Strip EXIF Only mode removes APP1/EXIF/XMP/IPTC segments and PNG/WebP metadata chunks at the byte level with zero pixel re-encoding.</p>
+          </div>
+          <div class="privacy-item">
+            <h3>128 KB Partial-Slice Inspector</h3>
+            <p>Extracts camera, GPS, and software metadata inside a Web Worker without reading full multi-megabyte payloads on the main thread.</p>
+          </div>
+          <div class="privacy-item">
+            <h3>Bounded WASM Worker Pool</h3>
+            <p>Runs MozJPEG, OxiPNG, libwebp, libavif, and fflate ZIP packaging off-thread using transferable ArrayBuffers and paired ObjectURL cleanup.</p>
+          </div>
+        </div>
+
+        <div class="privacy-footer">
+          <span class="privacy-credit">Created by Kholiq Fadhilah</span>
           <a
             href="https://github.com/fadhilahkholiq/pixnify-web"
             target="_blank"
             rel="noopener noreferrer"
-            class="footer-link"
+            class="btn btn-ghost btn-compact"
           >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            <span>GitHub</span>
+            GitHub Repository
           </a>
         </div>
       </div>
-    </footer>
+    </div>
 
     <!-- EXIF Privacy Inspector Drawer -->
     <div class="overlay-backdrop" id="exif-backdrop" hidden></div>
@@ -370,12 +408,12 @@
     >
       <div class="drawer-header">
         <div>
-          <span class="tag">Metadata Inspector</span>
+          <span class="pill pill-muted">Metadata Inspector</span>
           <h2 class="drawer-title" id="exif-drawer-title">EXIF Privacy Report</h2>
           <p class="drawer-subtitle" id="exif-drawer-subtitle"></p>
         </div>
         <button type="button" class="icon-btn" id="exif-close-btn" aria-label="Close inspector">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
             <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
           </svg>
         </button>
@@ -395,28 +433,28 @@
 
     <!-- Visual Split Comparison Modal -->
     <div
-      class="compare-modal-backdrop"
+      class="modal-backdrop"
       id="compare-modal"
       role="dialog"
       aria-modal="true"
       aria-labelledby="compare-modal-title"
       hidden
     >
-      <div class="card compare-modal-card">
-        <div class="compare-header">
+      <div class="modal-card compare-modal-card">
+        <div class="modal-header">
           <div>
-            <h2 class="drawer-title" id="compare-modal-title">Visual Comparison</h2>
-            <p class="drawer-subtitle" id="compare-modal-meta"></p>
+            <h2 class="modal-title" id="compare-modal-title">Visual Comparison</h2>
+            <p class="drawer-subtitle mono-text" id="compare-modal-meta"></p>
           </div>
           <button type="button" class="icon-btn" id="compare-close-btn" aria-label="Close comparison">
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
               <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
             </svg>
           </button>
         </div>
 
         <div class="compare-stage" id="compare-stage">
-          <img id="compare-img-optimized" class="compare-img compare-img-base" alt="Optimized output preview" />
+          <img id="compare-img-optimized" class="compare-img" alt="Optimized output preview" />
           <div class="compare-overlay" id="compare-overlay">
             <img id="compare-img-original" class="compare-img" alt="Original input preview" />
           </div>
@@ -432,20 +470,16 @@
         </div>
 
         <div class="compare-slider-bar">
-          <label class="field-label" for="compare-range">Split Position</label>
-          <input id="compare-range" class="range-input" type="range" min="0" max="100" value="50" />
-          <span class="value-pill" id="compare-percent">50%</span>
+          <label class="control-label" for="compare-range">Split Position</label>
+          <input id="compare-range" class="sleek-range" type="range" min="0" max="100" value="50" />
+          <span class="mono-pill" id="compare-percent">50%</span>
         </div>
       </div>
     </div>
 
     <noscript>
-      <div class="container" style="padding: 16px 24px;">
-        <div class="info-banner" role="alert">
-          <p class="info-banner-text">
-            <strong>JavaScript Required:</strong> Pixnify processes all images and EXIF metadata locally inside your browser using WebAssembly and Web Workers. Enable JavaScript to use the optimizer.
-          </p>
-        </div>
+      <div style="padding: 16px 24px;">
+        <p><strong>JavaScript Required:</strong> Pixnify processes all images and EXIF metadata locally inside your browser using WebAssembly and Web Workers.</p>
       </div>
     </noscript>
 

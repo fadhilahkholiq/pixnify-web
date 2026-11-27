@@ -31,6 +31,7 @@ export function initCompareModal() {
     overlay.style.clipPath = `inset(0 ${100 - clamped}% 0 0)`;
     divider.style.left = `${clamped}%`;
     rangeInput.value = String(clamped);
+    rangeInput.style.setProperty('--range-progress', `${clamped}%`);
     percentEl.textContent = `${clamped}%`;
   }
 

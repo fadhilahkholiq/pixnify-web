@@ -55,7 +55,6 @@ async function processQueueItem(item) {
   try {
     const fileBuffer = await item.originalFile.arrayBuffer();
 
-    // Check if settings changed while reading file from disk
     const latest = store.getItem(item.id);
     if (!latest || latest.revision !== revision) {
       return;
@@ -134,6 +133,18 @@ function dispatchAllQueued() {
 }
 
 /**
+ * Compute CSS percentage string for sleek range fill track.
+ * @param {HTMLInputElement} input
+ */
+function updateRangeProgress(input) {
+  const min = Number(input.min) || 0;
+  const max = Number(input.max) || 100;
+  const val = Number(input.value) || min;
+  const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
+  input.style.setProperty('--range-progress', `${pct}%`);
+}
+
+/**
  * Wire settings controls to the reactive store and worker cancellation.
  */
 function initSettingsControls() {
@@ -141,7 +152,7 @@ function initSettingsControls() {
   const modeStripBtn = /** @type {HTMLButtonElement} */ (document.getElementById('mode-strip-btn'));
   const modeDescEl = /** @type {HTMLElement} */ (document.getElementById('mode-description'));
   const transcodeFields = /** @type {HTMLElement} */ (document.getElementById('transcode-fields'));
-  const formatSelect = /** @type {HTMLSelectElement} */ (document.getElementById('setting-format'));
+  const formatBtns = Array.from(document.querySelectorAll('#format-grid .format-btn'));
   const qualityInput = /** @type {HTMLInputElement} */ (document.getElementById('setting-quality'));
   const qualityGroup = /** @type {HTMLElement} */ (document.getElementById('quality-field-group'));
   const qualityReadout = /** @type {HTMLElement} */ (document.getElementById('quality-readout'));
@@ -184,14 +195,23 @@ function initSettingsControls() {
     modeStripBtn.setAttribute('aria-pressed', String(isStrip));
 
     transcodeFields.classList.toggle('is-disabled', isStrip);
-    formatSelect.disabled = isStrip;
+
+    for (const btn of formatBtns) {
+      const fmt = btn.getAttribute('data-format');
+      const isActive = fmt === targetFormat;
+      btn.classList.toggle('is-active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+      /** @type {HTMLButtonElement} */ (btn).disabled = isStrip;
+    }
+
     qualityInput.disabled = isStrip || targetFormat === 'image/png';
     maxWidthInput.disabled = isStrip;
     maxHeightInput.disabled = isStrip;
 
-    qualityGroup.style.opacity = targetFormat === 'image/png' && !isStrip ? '0.5' : '1';
+    qualityGroup.style.opacity = targetFormat === 'image/png' && !isStrip ? '0.45' : '1';
     qualityReadout.textContent =
       targetFormat === 'image/png' ? 'Lossless' : String(quality);
+    updateRangeProgress(qualityInput);
 
     if (isStrip) {
       stripMetaCheckbox.checked = true;
@@ -203,7 +223,7 @@ function initSettingsControls() {
       stripMetaCheckbox.disabled = false;
       stripMetaRow.classList.remove('is-locked');
       modeDescEl.textContent =
-        'Decodes pixels, applies optional Lanczos resize, and encodes with MozJPEG, OxiPNG, libwebp, or libavif.';
+        'Decodes pixels, applies optional Lanczos resize, and encodes via MozJPEG, OxiPNG, libwebp, or libavif.';
     }
   }
 
@@ -219,18 +239,21 @@ function initSettingsControls() {
     syncUiState();
   });
 
-  formatSelect.addEventListener('change', () => {
-    applySettings({
-      targetFormat: /** @type {import('./state/store.js').PixnifySettings['targetFormat']} */ (
-        formatSelect.value
-      ),
+  for (const btn of formatBtns) {
+    btn.addEventListener('click', () => {
+      const format = /** @type {import('./state/store.js').PixnifySettings['targetFormat']} */ (
+        btn.getAttribute('data-format') || 'original'
+      );
+      if (store.settings.targetFormat === format) return;
+      applySettings({ targetFormat: format });
+      syncUiState();
     });
-    syncUiState();
-  });
+  }
 
   qualityInput.addEventListener('input', () => {
     const val = Number(qualityInput.value);
     qualityReadout.textContent = String(val);
+    updateRangeProgress(qualityInput);
     applySettings({ quality: val }, true);
   });
 
@@ -255,27 +278,54 @@ function initSettingsControls() {
 }
 
 /**
+ * Wire lightweight Privacy Info modal triggered from topbar.
+ */
+function initPrivacyModal() {
+  const openBtn = /** @type {HTMLButtonElement} */ (document.getElementById('privacy-info-btn'));
+  const modal = /** @type {HTMLElement} */ (document.getElementById('privacy-modal'));
+  const closeBtn = /** @type {HTMLButtonElement} */ (document.getElementById('privacy-close-btn'));
+
+  function open() {
+    modal.hidden = false;
+    openBtn.setAttribute('aria-expanded', 'true');
+  }
+
+  function close() {
+    modal.hidden = true;
+    openBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  openBtn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) close();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !modal.hidden) close();
+  });
+}
+
+/**
  * Display runtime isolation & worker pool capacity badges.
  */
 function initRuntimeBadges() {
-  const isolationBadge = document.getElementById('isolation-badge');
+  const isolationText = document.getElementById('isolation-badge-text');
   const concurrencyLabel = document.getElementById('worker-concurrency-label');
   const poolSize = Math.min(navigator.hardwareConcurrency || 4, 4);
 
   if (concurrencyLabel) {
-    concurrencyLabel.textContent = `${poolSize} Worker Pool`;
+    concurrencyLabel.textContent = `${poolSize} Workers`;
   }
 
-  if (isolationBadge) {
+  if (isolationText) {
     const isolated = self.crossOriginIsolated === true;
-    isolationBadge.textContent = isolated
-      ? 'Isolated · Wasm Ready'
-      : 'Single-Thread Wasm';
+    isolationText.textContent = isolated ? 'WASM Ready' : 'WASM Single-Thread';
   }
 }
 
 function bootstrap() {
   initRuntimeBadges();
+  initPrivacyModal();
   initSettingsControls();
   initQueueList();
   initExifDrawer();

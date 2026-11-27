@@ -103,7 +103,12 @@ export function initExifDrawer() {
       keyEl.textContent = entry.key;
 
       const tierTag = document.createElement('span');
-      tierTag.className = entry.tier === 'high' ? 'tag tag-ink' : 'tag';
+      tierTag.className =
+        entry.tier === 'high'
+          ? 'risk-pill risk-high'
+          : entry.tier === 'medium'
+          ? 'risk-pill risk-medium'
+          : 'risk-pill risk-safe';
       tierTag.textContent =
         entry.tier === 'high'
           ? 'High Risk'
